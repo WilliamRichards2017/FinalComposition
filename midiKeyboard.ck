@@ -13,6 +13,25 @@ MidiMsg msg;
 SndBuf sines => Pan2 p => dac;
 SndBuf harmony => p =>  dac;
 SndBuf piano => p => dac;
+        
+        SndBuf kick => dac;
+        SndBuf snare => dac;
+        SndBuf hihat => dac;
+        
+        
+        
+        me.dir() + "audio/kick.wav" => kick.read;
+        me.dir() + "audio/snare.wav" => snare.read;
+        me.dir() + "audio/hihat.wav" => hihat.read;
+        
+ 
+        0 => int dcount => int bcount;
+        
+        [1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0] @=> int kickHits1[];
+        [0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0] @=> int snareHits1[];
+        [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0] @=> int hihatHits1[];
+        
+
 
 class cos extends Chugen
 {
@@ -23,7 +42,7 @@ class cos extends Chugen
     
     fun float tick(float in)
     {
-        return Math.cos(((count++)*100)*2*pi*f/SRATE);
+        return Math.cos((((count++)*100)*2*pi*f/SRATE));
     }
     
     fun void freq(float frequency){
@@ -34,8 +53,10 @@ class cos extends Chugen
 }
 
 
+
+
 cos synth;  
-1 => synth.gain;
+.5 => synth.gain;
   //Sound that will control the midi keyboard 
 int id[100];          // Array to store notes currently being played
 int  counter;        // Counter to see how many notes we are currently playing
@@ -74,16 +95,28 @@ while( true ){
                 }
                 
                 //Top nob 2
-                if(msg.data2 == 21) {
+               else if(msg.data2 == 21) {
                 //    msg.data3/127.0 => harmony.gain;
                 }
                 
-                if(msg.data2 == 22) {
+               else if(msg.data2 == 22) {
                  //   msg.data3/127.0 => piano.gain;
                 }
-                if(msg.data2 == 23) {
+               else if(msg.data2 == 23) {
                  //   msg.data3/127.0 => metronome.gain;
                 }
+               else if(msg.data2==48 && msg.data3==0){
+                    //0 => kick.gain => snare.gain => hihat.gain;
+                    } 
+               else if(msg.data2==48 && msg.data3==127){
+                    //    .5 => kick.gain => snare.gain => hihat.gain;
+                    } 
+                    else if(msg.data2==50){
+                        (dcount+1) % 2 => dcount;
+                        }    
+                        else if(msg.data2==51){
+                        (bcount+1) % 2 => bcount;
+                            }
 
 
         }
@@ -155,5 +188,39 @@ while( true ){
             synth =< dac;
         }
         
+        
+        
+        0.2 => hihat.gain;
+        0.2 => kick.gain;
+        0.2 => snare.gain;
+        0.08::second => dur tempo;
+        
+        spork ~ drum_machine(kickHits1, snareHits1, hihatHits1);
+        1::day => now;
+        
+        public void drum_machine(int kickHits1[], int snareHits1[], int hihatHits1[]) {
+            while(true){ 
+                        <<<dcount>>>;       
+                0 => int beat;
+
+                while(beat < kickHits1.cap())
+                {
+                    if(kickHits1[beat])
+                    {
+                        0 => kick.pos;
+                    }
+                    if (snareHits1[beat]){
+                        0 => snare.pos;
+                    }
+                    //1 => hihat.pos;
+                    if(hihatHits1[beat]){
+                        0 => hihat.pos;
+                    }
+                    tempo => now;
+                    beat++;
+                }
+            }
+        }
+ 
 
         
