@@ -9,13 +9,9 @@ MidiIn min;
 //Midi Message
 MidiMsg msg;
 
-//Chuck sound buffers to dac and pan
-SndBuf sines => Pan2 p => dac;
-SndBuf harmony => p =>  dac;
-SndBuf piano => p => dac;
-
 class cos extends Chugen
 {
+    
     0 => int p;
     0 => int count;
     440 => float f;
@@ -23,19 +19,29 @@ class cos extends Chugen
     
     fun float tick(float in)
     {
-        return Math.cos(((count++)*100)*2*pi*f/SRATE);
+        return Math.cos(((count++)*30)*2*pi*f/SRATE);
     }
     
     fun void freq(float frequency){
         frequency => f;
     }
     
+    
 
 }
 
 
-cos synth;  
-1 => synth.gain;
+cos synth => JCRev r => Echo e => Echo e2 => Pan2 p => dac;
+
+synth.gain(0);
+
+// set delays
+240::ms => e.max => e.delay;
+480::ms => e2.max => e2.delay;
+// set gains
+.6 => e.gain;
+.3 => e2.gain;
+.05 => r.mix;  
   //Sound that will control the midi keyboard 
 int id[100];          // Array to store notes currently being played
 int  counter;        // Counter to see how many notes we are currently playing
@@ -142,7 +148,7 @@ while( true ){
     
         //helper function to turn note on
         public void ON(int note, int velocity){
-            synth=>dac;    
+            synth.gain(1);
              synth.freq(Std.mtof(note));
             <<<Std.mtof(note)>>>;
 	
@@ -152,8 +158,7 @@ while( true ){
         
         //helper function to turn not off
         public void OFF(){
-            synth =< dac;
+            synth.gain(0);
         }
         
 
-        
