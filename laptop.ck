@@ -1,4 +1,13 @@
-// HID
+/* Will Richards, Bobby Volpendesta
+ *  Final composition
+ *
+ *  Controls laptop  keyboard organorgan
+ *  code apadpted from chuck documented example: "http://chuck.cs.princeton.edu/doc/examples/hid/keyboard-organ.ck"
+ *  
+ */
+
+
+// HID for keyboard
 Hid hi;
 HidMsg msg;
 
@@ -9,7 +18,6 @@ if( me.args() ) me.arg(0) => Std.atoi => device;
 
 // open keyboard (get device number from command line)
 if( !hi.openKeyboard( device ) ) me.exit();
-<<< "keyboard '" + hi.name() + "' ready", "" >>>;
 
 // patch
 PercFlut organ => JCRev r => Echo e => Echo e2 => dac;
@@ -36,11 +44,28 @@ while( true )
         // check
         if( msg.isButtonDown() )
         {
+            // '>' to increase organ volume
+            if(msg.which==55)
+            {
+                organ.gain() => float temp;
+                .1 +=> temp;
+                organ.gain(temp);
+            }
+            // '<' to decrease organ volume
+            else  if(msg.which==54)
+            {
+                organ.gain() => float temp;
+                .1 -=> temp;
+                if (temp < 0){
+                    0 => temp;
+                }
+                organ.gain(temp);
+            }   
+            
             Std.mtof( msg.which + 45 ) => float freq;
             if( freq > 20000 ) continue;
             
             freq => organ.freq;
-            .5 => organ.gain;
             1 => organ.noteOn;
             
             80::ms => now;
